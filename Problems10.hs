@@ -108,9 +108,20 @@ subst x m (Var y)
   | otherwise = Var y
 subst x m (Lam y n) = Lam y (substUnder x m y n)
 subst x m (App n1 n2) = App (subst x m n1) (subst x m n2)
-subst x m n = undefined
+subst x m n
+  |Store a <- n = Store (subst x m a)
+  |Recall <- n = Recall
+  |Throw a <- n = Throw (subst x m a)
+  |Catch a b c <- n = Catch (subst x m a) b (if x == b then c else subst x m c)
+
 
 {-------------------------------------------------------------------------------
+
+data Expr = -- accumulator
+          | Store Expr | Recall 
+            -- exceptions
+          | Throw Expr | Catch Expr String Expr 
+  deriving Eq  
 
 Problems 3 - 10: Small-step semantics
 -------------------------------------
