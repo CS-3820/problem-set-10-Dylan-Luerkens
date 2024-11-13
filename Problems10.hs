@@ -117,12 +117,6 @@ subst x m n
 
 {-------------------------------------------------------------------------------
 
-data Expr = -- accumulator
-          | Store Expr | Recall 
-            -- exceptions
-          | Throw Expr | Catch Expr String Expr 
-  deriving Eq  
-
 Problems 3 - 10: Small-step semantics
 -------------------------------------
 
