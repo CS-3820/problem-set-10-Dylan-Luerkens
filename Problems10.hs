@@ -114,7 +114,6 @@ subst x m n
   |Throw a <- n = Throw (subst x m a)
   |Catch a b c <- n = Catch (subst x m a) b (if x == b then c else subst x m c)
 
-
 {-------------------------------------------------------------------------------
 
 Problems 3 - 10: Small-step semantics
@@ -202,12 +201,47 @@ For example:
 
 When implementing your `smallStep` function: feel free to start from the code in
 Lecture 12.  But be sure to handle *all* the cases where exceptions need to
-bubble; this won't *just* be `Throw` and `Catch.
+bubble; this won't *just* be `Throw` and `Catch. 
 
 -------------------------------------------------------------------------------}
 
 smallStep :: (Expr, Expr) -> Maybe (Expr, Expr)
-smallStep = undefined
+
+smallStep (Const _, _) = Nothing
+smallStep (Plus (Const x) (Const y), z) = Just (Const (x + y), z)
+
+smallStep (Plus x y, z)
+  | Just (a, b) <- smallStep (x, z) = Just (Plus a y, b)
+  | Throw v <- x = Just (Throw v, z)
+  | Just (c, b) <- smallStep (y, z) = Just (Plus x c, b)
+  | Throw v <- y = Just (Throw v, z)
+  | otherwise = Nothing
+
+smallStep (Var _, _) = Nothing
+
+smallStep (Lam _ _, _) = Nothing
+
+smallStep (App (Lam x m) n, s) 
+  | isValue n = Just (subst x n m, s)
+
+smallStep (App x y, z)
+  | Just (a, b) <- smallStep (x, z) = Just (App a y, b)
+  | Throw v <- x = Just (Throw v, z)
+  | Just (c, b) <- smallStep (y, z) = Just (App x c, b)
+  | Throw v <- y = Just (Throw v, z)
+  | otherwise = Nothing
+
+smallStep (Store x, z)
+  | Just (a, b) <- smallStep (x, z) = Just (Store a, b)
+  | Throw v <- x = Just (Throw v, z)
+  | isValue x = Just (x, x)
+  | otherwise = Nothing
+
+smallStep (Recall, s)  = Just (s, s)
+
+smallStep (Throw x, z) = undefined
+
+smallStep _ = Nothing
 
 steps :: (Expr, Expr) -> [(Expr, Expr)]
 steps s = case smallStep s of
