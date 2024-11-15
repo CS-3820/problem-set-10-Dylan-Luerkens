@@ -239,7 +239,11 @@ smallStep (Store x, z)
 
 smallStep (Recall, s)  = Just (s, s)
 
-smallStep (Throw x, z) = undefined
+smallStep (Throw x, z)
+  | Just(a, b) <- smallStep (x, z) = Just (Throw a, b)
+  |otherwise = Nothing
+
+smallStep (Catch w x y, z) = undefined
 
 smallStep _ = Nothing
 
