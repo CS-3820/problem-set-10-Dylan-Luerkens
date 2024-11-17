@@ -207,6 +207,7 @@ bubble; this won't *just* be `Throw` and `Catch.
 
 smallStep :: (Expr, Expr) -> Maybe (Expr, Expr)
 
+smallStep (Const _, _) = Nothing
 smallStep (Plus (Const x) (Const y), z) = Just (Const (x + y), z)
 
 smallStep (Plus x y, z)
@@ -214,6 +215,10 @@ smallStep (Plus x y, z)
   | Throw v <- x = Just (Throw v, z)
   | Just (c, b) <- smallStep (y, z) = Just (Plus x c, b)
   | Throw v <- y = Just (Throw v, z)
+
+smallStep (Var _, _) = Nothing
+
+smallStep (Lam _ _, _) = Nothing
 
 smallStep (App (Lam x m) n, s) 
   | isValue n = Just (subst x n m, s)
@@ -235,7 +240,12 @@ smallStep (Throw x, z)
   | Just(a, b) <- smallStep (x, z) = Just (Throw a, b)
   | Throw v <- x = Just (Throw v, z)
 
-smallStep (Catch w x y, z) = undefined
+smallStep (Catch (Throw w) x y, z) 
+  | isValue w = Just (subst x w y, z)
+
+smallStep (Catch w x y, z) 
+  | isValue w = Just (w, z)
+  | Just (a, b) <- smallStep (w, z) = Just (Catch a x y, b)
 
 smallStep _ = Nothing
 
